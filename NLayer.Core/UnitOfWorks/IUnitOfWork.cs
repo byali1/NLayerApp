@@ -8,7 +8,7 @@ namespace NLayer.Core.UnitOfWorks
 {
     public interface IUnitOfWork
     {
-        Task CommitAsync(); //SaveChangeAsync() - DbContext
-        void Commit(); //SaveChange() - DbContext
+        Task CommitAsync(); //SaveChangesAsync() - DbContext
+        void Commit(); //SaveChanges() - DbContext
     }
 }
