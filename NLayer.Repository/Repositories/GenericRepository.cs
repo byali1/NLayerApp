@@ -9,8 +9,9 @@ using NLayer.Core.Repositories;
 
 namespace NLayer.Repository.Repositories
 {
-    public class GenericRepository<T>:IGenericRepository<T> where T : class
+    public class GenericRepository<T> : IGenericRepository<T> where T : class
     {
+        //Ozel operasyonlar yazip dbcontext'e erisebilmek icin → protected
         protected readonly AppDbContext _context;
         private readonly DbSet<T> _dbSet;
 
@@ -26,7 +27,7 @@ namespace NLayer.Repository.Repositories
             return await _dbSet.FindAsync(id);
         }
 
-        public IQueryable<T> GetAll(Expression<Func<T, bool>> expression)
+        public IQueryable<T> GetAll()
         {
             //AsNoTracking sayesinde EfCore datayı memory'e atmaz. Performans artar.
             return _dbSet.AsNoTracking().AsQueryable();
