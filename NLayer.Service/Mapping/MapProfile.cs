@@ -9,6 +9,7 @@ using NLayer.Core.Models;
 
 namespace NLayer.Service.Mapping
 {
+    //AutoMapper
     public class MapProfile : Profile
     {
         
@@ -18,6 +19,8 @@ namespace NLayer.Service.Mapping
             CreateMap<Category, CategoryDto>().ReverseMap();
             CreateMap<ProductFeature, ProductFeatureDto>().ReverseMap();
             CreateMap<ProductUpdateDto, Product>();
+            CreateMap<Product, ProductWithCategoryDto>();
+            CreateMap<Category, CategoryWithProductsDto>();
            
         }
     }
