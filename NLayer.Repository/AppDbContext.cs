@@ -9,18 +9,45 @@ using NLayer.Core.Models;
 
 namespace NLayer.Repository
 {
-    public class AppDbContext:DbContext
+    public class AppDbContext : DbContext
     {
-        public AppDbContext(DbContextOptions<AppDbContext> options):base(options)
+        public AppDbContext(DbContextOptions<AppDbContext> options) : base(options)
         {
-            
+
         }
 
 
         public DbSet<Product> Products { get; set; }
         public DbSet<Category> Categories { get; set; }
-       
+
         public DbSet<ProductFeature> ProductFeatures { get; set; }
+
+        public override Task<int> SaveChangesAsync(CancellationToken cancellationToken = default)
+        {
+            foreach (var item in ChangeTracker.Entries())
+            {
+                if (item.Entity is BaseEntity entityReference)
+                {
+                    switch (item.State)
+                    {
+                        case EntityState.Added:
+                            {
+                                entityReference.CreatedDate = DateTime.Now;
+                                break;
+                            }
+                        case EntityState.Modified:
+                            {
+                                //update esnasında bu alana dokunma
+                                Entry(entityReference).Property(x => x.CreatedDate).IsModified = false;
+
+                                entityReference.UpdatedDate = DateTime.Now;
+                                break;
+                            }
+                    }
+                }
+            }
+            return base.SaveChangesAsync(cancellationToken);
+        }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
@@ -33,7 +60,7 @@ namespace NLayer.Repository
                 Id = 1,
                 Color = "Siyah",
                 Height = 60,
-                Width = 40, 
+                Width = 40,
                 ProductId = 1
             }, new ProductFeature
             {
