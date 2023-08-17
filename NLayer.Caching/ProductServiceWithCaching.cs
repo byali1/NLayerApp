@@ -22,21 +22,40 @@ namespace NLayer.Caching
         private const string CacheProductKey = "productsCache";
         private readonly IMapper _mapper;
         private readonly IMemoryCache _memoryCache;
-        private readonly IProductRepository _productRepository;
+        private readonly IProductRepository _repository;
         private readonly IUnitOfWork _unitOfWork;
 
-        public ProductServiceWithCaching(IMapper mapper, IMemoryCache memoryCache, IProductRepository productRepository, IUnitOfWork unitOfWork)
+        public ProductServiceWithCaching(IUnitOfWork unitOfWork, IProductRepository repository, IMemoryCache memoryCache, IMapper mapper)
         {
-            _mapper = mapper;
-            _memoryCache = memoryCache;
-            _productRepository = productRepository;
             _unitOfWork = unitOfWork;
+            _repository = repository;
+            _memoryCache = memoryCache;
+            _mapper = mapper;
 
             if (!_memoryCache.TryGetValue(CacheProductKey, out _))
             {
-                _memoryCache.Set(CacheProductKey, _productRepository.GetProductsWithCategoryAsync().Result);
+                _memoryCache.Set(CacheProductKey, _repository.GetProductsWithCategoryAsync().Result);
             }
+
+
         }
+
+        public async Task<Product> AddAsync(Product entity)
+        {
+            await _repository.AddAsync(entity);
+            await _unitOfWork.CommitAsync();
+            await CacheAllProductsAsync();
+            return entity;
+        }
+
+        public async Task<IEnumerable<Product>> AddRangeAsync(IEnumerable<Product> entities)
+        {
+            await _repository.AddRangeAsync(entities);
+            await _unitOfWork.CommitAsync();
+            await CacheAllProductsAsync();
+            return entities;
+        }
+
         public Task<bool> AnyAsync(Expression<Func<Product, bool>> expression)
         {
             return Task.FromResult(_memoryCache.Get<List<Product>>(CacheProductKey).Where(expression.Compile()).Any());
@@ -72,21 +91,21 @@ namespace NLayer.Caching
 
         public async Task RemoveAsync(Product entity)
         {
-            _productRepository.Remove(entity);
+            _repository.Remove(entity);
             await _unitOfWork.CommitAsync();
             await CacheAllProductsAsync();
         }
 
         public async Task RemoveRangeAsync(IEnumerable<Product> entities)
         {
-            _productRepository.RemoveRange(entities);
+            _repository.RemoveRange(entities);
             await _unitOfWork.CommitAsync();
             await CacheAllProductsAsync();
         }
 
         public async Task UpdateAsync(Product entity)
         {
-            _productRepository.Update(entity);
+            _repository.Update(entity);
             await _unitOfWork.CommitAsync();
             await CacheAllProductsAsync();
         }
@@ -95,29 +114,12 @@ namespace NLayer.Caching
         {
             return _memoryCache.Get<List<Product>>(CacheProductKey).Where(expression.Compile()).AsQueryable();
         }
-        public async Task<Product> AddAsync(Product entity)
-        {
-            await _productRepository.AddAsync(entity);
-            await _unitOfWork.CommitAsync();
-            await CacheAllProductsAsync();
-            return entity;
-        }
-
-        public async Task<IEnumerable<Product>> AddRangeAsync(IEnumerable<Product> entities)
-        {
-            await _productRepository.AddRangeAsync(entities);
-            await _unitOfWork.CommitAsync();
-            await CacheAllProductsAsync();
-            return entities;
-        }
-
-
-
 
 
         public async Task CacheAllProductsAsync()
         {
-            _memoryCache.Set(CacheProductKey, await _productRepository.GetAll().ToListAsync());
+            _memoryCache.Set(CacheProductKey, await _repository.GetAll().ToListAsync());
+
         }
     }
 }

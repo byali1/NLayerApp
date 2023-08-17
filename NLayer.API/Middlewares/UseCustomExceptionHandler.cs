@@ -24,9 +24,11 @@ namespace NLayer.API.Middlewares
                         NotFoundException => 404,
                         _ => 500
                     };
-
                     context.Response.StatusCode = statusCode;
+
+
                     var response = CustomResponseDto<NoContentDto>.Fail(statusCode, exceptionFeature.Error.Message);
+
 
                     await context.Response.WriteAsync(JsonSerializer.Serialize(response));
 
