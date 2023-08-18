@@ -22,7 +22,19 @@ namespace NLayer.Repository
 
         public DbSet<ProductFeature> ProductFeatures { get; set; }
 
+        public override int SaveChanges()
+        {
+            UpdateChangeTracker();
+            return base.SaveChanges();
+        }
+
         public override Task<int> SaveChangesAsync(CancellationToken cancellationToken = default)
+        {
+            UpdateChangeTracker();
+            return base.SaveChangesAsync(cancellationToken);
+        }
+
+        public void UpdateChangeTracker()
         {
             foreach (var item in ChangeTracker.Entries())
             {
@@ -31,22 +43,21 @@ namespace NLayer.Repository
                     switch (item.State)
                     {
                         case EntityState.Added:
-                            {
-                                entityReference.CreatedDate = DateTime.Now;
-                                break;
-                            }
+                        {
+                            Entry(entityReference).Property(x => x.UpdatedDate).IsModified = false;
+                            entityReference.CreatedDate = DateTime.Now;
+                            break;
+                        }
                         case EntityState.Modified:
-                            {
-                                //update esnasında bu alana dokunma
-                                Entry(entityReference).Property(x => x.CreatedDate).IsModified = false;
+                        {
+                            Entry(entityReference).Property(x => x.CreatedDate).IsModified = false;
 
-                                entityReference.UpdatedDate = DateTime.Now;
-                                break;
-                            }
+                            entityReference.UpdatedDate = DateTime.Now;
+                            break;
+                        }
                     }
                 }
             }
-            return base.SaveChangesAsync(cancellationToken);
         }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
